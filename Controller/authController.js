@@ -1,7 +1,26 @@
+import jwt from "jsonwebtoken";
 import User from "../model/user.js";
 import { hashPassword, comparePassword } from "../utils/helpers.js";
 
+const lifetime = 3600000;
 
+const cookieOptions = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+  path: "/",
+};
+
+const createToken = (user) =>
+  jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: lifetime / 1000 },
+  );
 
 
 export const signup = (role) => async (req, res) => {
@@ -31,12 +50,12 @@ export const signup = (role) => async (req, res) => {
 
     const savedUser = await newUser.save();
 
-  
-   
+    const token = createToken(savedUser);
+    res.cookie("token", token, { ...cookieOptions, maxAge: lifetime });
 
     return res.status(201).json({
       message: `New ${role} added successfully`,
-   
+      token,
       user: {
         id: savedUser.id,
         name: savedUser.name,
@@ -71,11 +90,11 @@ export const login = (role) => async (req, res) => {
       return res.status(400).json({ error: "Wrong password" });
     }
 
-   
-  
+    const token = createToken(user);
+    res.cookie("token", token, { ...cookieOptions, maxAge: lifetime });
 
     return res.status(200).json({
-      
+      token,
       id: user.id,
       name: user.name,
       email: user.email,
@@ -87,6 +106,6 @@ export const login = (role) => async (req, res) => {
 };
 
 export const logout = (req, res) => {
-
+  res.clearCookie("token", cookieOptions);
   return res.status(200).json({ message: "Logout successful" });
 };
