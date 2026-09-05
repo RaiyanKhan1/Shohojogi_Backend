@@ -1,23 +1,49 @@
+import dns from "node:dns";
 import express from "express";
-import clients from "clients.json"
-import workers from "workers.json"
-import ClientRoutes from "../Routes/ClientRoutes"
+import mongoose from "mongoose";
+import cors from "cors";
+import "dotenv/config";
+import log from "./middlewares/logger.js";
+import clientRoutes from "./routes/clientRoutes.js";
+import workerRoutes from "./routes/workerRoutes.js";
+
+// Some local resolvers refuse SRV lookups, which mongodb+srv:// needs.
+// Set DNS_SERVERS in .env (e.g. 8.8.8.8,1.1.1.1) to override them.
+if (process.env.DNS_SERVERS) {
+  dns.setServers(process.env.DNS_SERVERS.split(","));
+}
 
 const app = express();
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
+
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.DATABASE_URL);
+    console.log("Connected to database");
+  } catch (err) {
+    console.log(`Error connecting to database ${err}`);
+    process.exit(1);
+  }
+};
+
+connectDB();
 
 app.use(express.json());
+app.use(
+  cors({
+    origin: process.env.ALLOWED_ORIGIN,
+  }),
+);
+app.use(log);
 
-app.get("/", (req,res) => {
-   res.status(200).json({message : "api working"});
+app.get("/api", (req, res) => res.json({ message: "API is working" }));
+
+app.use("/api/client", clientRoutes);
+
+app.use("/api/worker", workerRoutes);
+
+app.listen(PORT, () => {
+  console.log(`Server listening on port: ${PORT}`);
 });
 
-app.use("/clientuser", ClientRoutes);
-
-app.post("/workeruser", (req,res) => {
-    
-});
-
-app.listen(PORT,()=>{
-    console.log(`server is listening on ${PORT}` );
-})
+export default app;

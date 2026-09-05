@@ -1,8 +1,15 @@
 import express from "express";
-import { addClient } from "../Controller/clientController"
-const router = express.Router;
+import { signup, login } from "../controller/authController.js";
+import { getProfile } from "../controller/userController.js";
+import checkToken from "../middlewares/checkToken.js";
+import checkRole from "../middlewares/checkRole.js";
 
+const router = express.Router();
 
-router.get('/',addClient);
+router.post("/signup", signup("client"));
 
-export default router
+router.post("/login", login("client"));
+
+router.get("/profile", checkToken, checkRole("client"), getProfile);
+
+export default router;
