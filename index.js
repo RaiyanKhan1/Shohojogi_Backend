@@ -8,8 +8,7 @@ import log from "./middlewares/logger.js";
 import clientRoutes from "./routes/clientRoutes.js";
 import workerRoutes from "./routes/workerRoutes.js";
 
-// Some local resolvers refuse SRV lookups, which mongodb+srv:// needs.
-// Set DNS_SERVERS in .env (e.g. 8.8.8.8,1.1.1.1) to override them.
+
 if (process.env.DNS_SERVERS) {
   dns.setServers(process.env.DNS_SERVERS.split(","));
 }
