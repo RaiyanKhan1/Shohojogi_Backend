@@ -11,8 +11,7 @@ const cookieOptions = {
   path: "/",
 };
 
-// Both signup and login are built per role, so /api/client and /api/worker
-// stay separate endpoints while sharing the same logic.
+
 const createToken = (user) =>
   jwt.sign(
     {

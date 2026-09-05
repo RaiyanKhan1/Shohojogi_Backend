@@ -7,8 +7,7 @@ const cookieOptions = {
   path: "/",
 };
 
-// The browser sends the token cookie automatically. Verify it and put the
-// payload on req.user so controllers know who is asking.
+
 const checkToken = (req, res, next) => {
   const { token } = req.cookies;
 
