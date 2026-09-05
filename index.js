@@ -4,7 +4,6 @@ import mongoose from "mongoose";
 import cors from "cors";
 import "dotenv/config";
 import log from "./middlewares/logger.js";
-import clientRoutes from "./routes/clientRoutes.js";
 import workerRoutes from "./routes/workerRoutes.js";
 
 // Some local resolvers refuse SRV lookups, which mongodb+srv:// needs.
