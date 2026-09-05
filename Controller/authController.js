@@ -11,6 +11,8 @@ const cookieOptions = {
   path: "/",
 };
 
+// Both signup and login are built per role, so /api/client and /api/worker
+// stay separate endpoints while sharing the same logic.
 const createToken = (user) =>
   jwt.sign(
     {
@@ -55,7 +57,6 @@ export const signup = (role) => async (req, res) => {
 
     return res.status(201).json({
       message: `New ${role} added successfully`,
-      token,
       user: {
         id: savedUser.id,
         name: savedUser.name,
@@ -94,11 +95,13 @@ export const login = (role) => async (req, res) => {
     res.cookie("token", token, { ...cookieOptions, maxAge: lifetime });
 
     return res.status(200).json({
-      token,
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
+      message: "Login successful",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (err) {
     return res.status(400).json({ error: err.message });
