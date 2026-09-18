@@ -1,4 +1,4 @@
-import dns from "node:dns";
+
 import express from "express";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
@@ -9,9 +9,7 @@ import clientRoutes from "./routes/clientRoutes.js";
 import workerRoutes from "./routes/workerRoutes.js";
 
 
-if (process.env.DNS_SERVERS) {
-  dns.setServers(process.env.DNS_SERVERS.split(","));
-}
+
 
 const app = express();
 const PORT = process.env.PORT || 4000;
