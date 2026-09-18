@@ -1,4 +1,7 @@
+import mongoose from "mongoose";
+import { v2 as cloudinary } from "cloudinary";
 import Task from "../model/tasks.js";
+import { deleteFiles } from "../utils/fileUtils.js";
 
 export const createTask = async (req, res) => {
   const { taskName, location, deadline, budget, tags, requirements, details } =
@@ -11,6 +14,14 @@ export const createTask = async (req, res) => {
   }
 
   try {
+    let taskImage;
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "task_images",
+      });
+      taskImage = { url: result.secure_url, publicId: result.public_id };
+    }
+
     const newTask = new Task({
       postedBy: req.user.id,
       taskName,
@@ -20,6 +31,7 @@ export const createTask = async (req, res) => {
       tags,
       requirements,
       details,
+      taskImage,
     });
 
     const savedTask = await newTask.save();
@@ -30,6 +42,8 @@ export const createTask = async (req, res) => {
     });
   } catch (err) {
     return res.status(400).json({ error: err.message });
+  } finally {
+    if (req.file) deleteFiles([req.file.path]);
   }
 };
 
@@ -47,8 +61,14 @@ export const getTasks = async (req, res) => {
 };
 
 export const getTaskById = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "Invalid task id" });
+  }
+
   try {
-    const task = await Task.findById(req.params.id)
+    const task = await Task.findById(id)
       .select("-__v")
       .populate("postedBy", "name email");
 
@@ -57,6 +77,91 @@ export const getTaskById = async (req, res) => {
     }
 
     return res.status(200).json(task);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+};
+
+export const deleteTaskById = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "Invalid task id" });
+  }
+
+  try {
+    const task = await Task.findById(id);
+
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    if (task.postedBy.toString() !== req.user.id) {
+      return res
+        .status(403)
+        .json({ error: "You can only delete your own tasks" });
+    }
+
+    if (task.taskImage?.publicId) {
+      await cloudinary.uploader.destroy(task.taskImage.publicId);
+    }
+
+    await Task.findByIdAndDelete(id);
+
+    return res.status(200).json({ message: "Task deleted" });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+export const setTaskApproval = async (req, res) => {
+  const { id } = req.params;
+  const { approved } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "Invalid task id" });
+  }
+
+  if (approved !== undefined && typeof approved !== "boolean") {
+    return res.status(400).json({ error: "approved must be a boolean" });
+  }
+
+  try {
+    const task = await Task.findByIdAndUpdate(
+      id,
+      { approved: approved ?? true },
+      { new: true, runValidators: true },
+    )
+      .select("-__v")
+      .populate("postedBy", "name email");
+
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    return res.status(200).json({
+      message: task.approved ? "Task approved" : "Task approval revoked",
+      task,
+    });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+};
+
+export const getAllTasksForAdmin = async (req, res) => {
+  const { approved } = req.query;
+
+  const filter = {};
+  if (approved === "true") filter.approved = true;
+  if (approved === "false") filter.approved = false;
+
+  try {
+    const tasks = await Task.find(filter)
+      .select("-__v")
+      .populate("postedBy", "name email")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json(tasks);
   } catch (err) {
     return res.status(400).json({ error: err.message });
   }

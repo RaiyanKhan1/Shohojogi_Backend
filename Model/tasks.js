@@ -1,7 +1,13 @@
 import { Schema, model } from "mongoose";
 
+const imageSchema = new Schema(
+  { url: String, publicId: String },
+  { _id: false },
+);
+
 const taskSchema = new Schema(
   {
+    taskImage: imageSchema,
     postedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -38,6 +44,11 @@ const taskSchema = new Schema(
     details: {
       type: Schema.Types.String,
       trim: true,
+    },
+    approved: {
+      type: Schema.Types.Boolean,
+      default: false,
+      index: true,
     },
   },
   { timestamps: true },
