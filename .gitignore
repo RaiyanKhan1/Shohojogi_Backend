@@ -44,3 +44,6 @@ tmp/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Database backups (may contain user data)
+backups/
