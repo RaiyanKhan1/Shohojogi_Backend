@@ -175,3 +175,38 @@ export const getAllTasksForAdmin = async (req, res) => {
     return res.status(400).json({ error: err.message });
   }
 };
+
+export const getApprovedTasks = async (req, res) => {
+  try {
+    const tasks = await Task.find({ status: "approved" })
+      .select("-__v")
+      .populate("postedBy", "name")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json(tasks);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+};
+
+export const getApprovedTaskById = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "Invalid task id" });
+  }
+
+  try {
+    const task = await Task.findOne({ _id: id, status: "approved" })
+      .select("-__v")
+      .populate("postedBy", "name");
+
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    return res.status(200).json(task);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+};

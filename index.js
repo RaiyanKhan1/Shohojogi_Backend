@@ -8,6 +8,7 @@ import log from "./middlewares/logger.js";
 import clientRoutes from "./routes/clientRoutes.js";
 import workerRoutes from "./routes/workerRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import publicRoutes from "./routes/publicRoutes.js";
 import fs from "fs";
 import { v2 as cloudinary } from "cloudinary";
 
@@ -52,6 +53,8 @@ app.use(
 app.use(log);
 
 app.get("/api", (req, res) => res.json({ message: "API is working" }));
+
+app.use("/api", publicRoutes);
 
 app.use("/api/client", clientRoutes);
 
