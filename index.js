@@ -1,5 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
+import dns from "node:dns";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import "dotenv/config";
@@ -9,6 +10,10 @@ import workerRoutes from "./routes/workerRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import fs from "fs";
 import { v2 as cloudinary } from "cloudinary";
+
+if (process.env.DNS_SERVERS) {
+  dns.setServers(process.env.DNS_SERVERS.split(","));
+}
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
