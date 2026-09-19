@@ -21,11 +21,6 @@ router.get("/tasks", getAllTasksForAdmin);
 
 router.get("/tasks/:id", getTaskById);
 
-router.patch(
-  "/tasks/:id/approval",
-  checkToken,
-  checkRole("admin"),
-  setTaskApproval,
-);
+router.patch("/tasks/:id/approval", setTaskApproval);
 
 export default router;
