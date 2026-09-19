@@ -17,9 +17,9 @@ router.post("/logout", checkToken, logout);
 
 router.get("/profile", checkToken, checkRole("admin"), getProfile);
 
-router.get("/tasks", checkToken, checkRole("admin"), getAllTasksForAdmin);
+router.get("/tasks", getAllTasksForAdmin);
 
-router.get("/tasks/:id", checkToken, checkRole("admin"), getTaskById);
+router.get("/tasks/:id", getTaskById);
 
 router.patch(
   "/tasks/:id/approval",

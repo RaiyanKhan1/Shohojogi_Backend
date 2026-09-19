@@ -15,11 +15,16 @@ export const createTask = async (req, res) => {
 
   try {
     let taskImage;
+
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "task_images",
       });
-      taskImage = { url: result.secure_url, publicId: result.public_id };
+
+      taskImage = {
+        url: result.secure_url,
+        publicId: result.public_id,
+      };
     }
 
     const newTask = new Task({
@@ -116,20 +121,22 @@ export const deleteTaskById = async (req, res) => {
 
 export const setTaskApproval = async (req, res) => {
   const { id } = req.params;
-  const { approved } = req.body;
+  const { status } = req.body;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ error: "Invalid task id" });
   }
 
-  if (approved !== undefined && typeof approved !== "boolean") {
-    return res.status(400).json({ error: "approved must be a boolean" });
+  if (!["pending", "approved", "rejected"].includes(status)) {
+    return res.status(400).json({
+      error: "status must be pending, approved, or rejected",
+    });
   }
 
   try {
     const task = await Task.findByIdAndUpdate(
       id,
-      { approved: approved ?? true },
+      { status },
       { new: true, runValidators: true },
     )
       .select("-__v")
@@ -140,7 +147,7 @@ export const setTaskApproval = async (req, res) => {
     }
 
     return res.status(200).json({
-      message: task.approved ? "Task approved" : "Task approval revoked",
+      message: `Task ${status}`,
       task,
     });
   } catch (err) {
@@ -149,11 +156,13 @@ export const setTaskApproval = async (req, res) => {
 };
 
 export const getAllTasksForAdmin = async (req, res) => {
-  const { approved } = req.query;
+  const { status } = req.query;
 
   const filter = {};
-  if (approved === "true") filter.approved = true;
-  if (approved === "false") filter.approved = false;
+
+  if (["pending", "approved", "rejected"].includes(status)) {
+    filter.status = status;
+  }
 
   try {
     const tasks = await Task.find(filter)
