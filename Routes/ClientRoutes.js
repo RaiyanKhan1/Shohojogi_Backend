@@ -11,6 +11,10 @@ import checkToken from "../middlewares/checkToken.js";
 import checkRole from "../middlewares/checkRole.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { multerErrorHandling } from "../middlewares/multerError.middleware.js";
+import {
+  getClientApplications,
+  updateApplicationStatus,
+} from "../Controller/applicationController.js";
 
 const router = express.Router();
 
@@ -36,5 +40,21 @@ router.delete("/tasks/:id", checkToken, checkRole("client"), deleteTaskById);
 router.get("/tasks", checkToken, checkRole("client"), getTasks);
 
 router.get("/tasks/:id", checkToken, checkRole("client"), getTaskById);
+
+// Client views applications for their own tasks.
+router.get(
+  "/applications",
+  checkToken,
+  checkRole("client"),
+  getClientApplications,
+);
+
+// Client accepts or rejects an application.
+router.patch(
+  "/applications/:applicationId/status",
+  checkToken,
+  checkRole("client"),
+  updateApplicationStatus,
+);
 
 export default router;

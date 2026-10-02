@@ -1,0 +1,156 @@
+import mongoose from "mongoose";
+import Application from "../Model/application.js";
+import Task from "../model/tasks.js";
+
+const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+// WORKER: Apply to an approved task.
+export const applyToTask = async (req, res) => {
+    const { taskId } = req.params;
+
+    if (!isValidId(taskId)) {
+        return res.status(400).json({ error: "Invalid task ID" });
+    }
+
+    try {
+        const task = await Task.findOne({
+            _id: taskId,
+            status: "approved",
+        });
+
+        if (!task) {
+            return res.status(404).json({
+                error: "Task not found or not open for applications",
+            });
+        }
+
+        if (task.postedBy.toString() === req.user.id) {
+            return res.status(403).json({
+                error: "You cannot apply to your own task",
+            });
+        }
+
+        const application = await Application.create({
+            task: task._id,
+            worker: req.user.id,
+        });
+
+        return res.status(201).json({
+            message: "Application submitted successfully",
+            application,
+        });
+    } catch (err) {
+        if (err.code === 11000) {
+            return res.status(409).json({
+                error: "You have already applied to this task",
+            });
+        }
+
+        console.error("Apply to task error:", err);
+
+        return res.status(500).json({
+            error: "Unable to submit application",
+        });
+    }
+};
+
+// WORKER: Check their own applications.
+export const getMyApplications = async (req, res) => {
+    try {
+        const applications = await Application.find({
+            worker: req.user.id,
+        })
+            .populate(
+                "task",
+                "taskName location budget deadline status taskImage",
+            )
+            .sort({ createdAt: -1 });
+
+        return res.status(200).json(applications);
+    } catch (err) {
+        console.error("Get worker applications error:", err);
+
+        return res.status(500).json({
+            error: "Unable to load your applications",
+        });
+    }
+};
+
+// CLIENT: Retrieve applications for their own tasks only.
+export const getClientApplications = async (req, res) => {
+    try {
+        const clientTasks = await Task.find({
+            postedBy: req.user.id,
+        }).select("_id");
+
+        const taskIds = clientTasks.map((task) => task._id);
+
+        const applications = await Application.find({
+            task: { $in: taskIds },
+        })
+            .populate("task", "taskName location budget deadline status")
+            .populate("worker", "name email")
+            .sort({ createdAt: -1 });
+
+        return res.status(200).json(applications);
+    } catch (err) {
+        console.error("Get client applications error:", err);
+
+        return res.status(500).json({
+            error: "Unable to load applications",
+        });
+    }
+};
+
+// CLIENT: Accept or reject an application for their own task.
+export const updateApplicationStatus = async (req, res) => {
+    const { applicationId } = req.params;
+    const { status } = req.body;
+
+    if (!isValidId(applicationId)) {
+        return res.status(400).json({
+            error: "Invalid application ID",
+        });
+    }
+
+    if (!["accepted", "rejected"].includes(status)) {
+        return res.status(400).json({
+            error: "Status must be accepted or rejected",
+        });
+    }
+
+    try {
+        const application = await Application.findById(applicationId)
+            .populate("task", "postedBy taskName")
+            .populate("worker", "name email");
+
+        if (!application) {
+            return res.status(404).json({
+                error: "Application not found",
+            });
+        }
+
+        // Verify that this client owns the task.
+        if (
+            application.task.postedBy.toString() !== req.user.id
+        ) {
+            return res.status(403).json({
+                error: "You can only manage applications for your own tasks",
+            });
+        }
+
+        application.status = status;
+        await application.save();
+
+        return res.status(200).json({
+            message: `Application ${status}`,
+            application,
+        });
+    } catch (err) {
+        console.error("Update application status error:", err);
+
+        return res.status(500).json({
+            error: "Unable to update application",
+        });
+    }
+};
