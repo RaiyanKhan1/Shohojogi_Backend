@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 import Application from "../Model/application.js";
 import Task from "../model/tasks.js";
+import User from "../model/user.js";
+
+import {
+    sendNewApplicationEmail,
+    sendApplicationAcceptedEmail,
+    sendApplicationRejectedEmail,
+} from "../utils/email.js";
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -34,6 +41,27 @@ export const applyToTask = async (req, res) => {
             task: task._id,
             worker: req.user.id,
         });
+
+        // Get the client who posted the task.
+        const client = await User.findById(task.postedBy).select(
+            "name email",
+        );
+
+        // Get the worker who submitted the application.
+        const worker = await User.findById(req.user.id).select(
+            "name",
+        );
+
+        // Send notification email.
+        // Email failure does NOT affect the application itself.
+        if (client?.email) {
+            await sendNewApplicationEmail({
+                clientEmail: client.email,
+                clientName: client.name,
+                workerName: worker?.name || "A worker",
+                taskName: task.taskName,
+            });
+        }
 
         return res.status(201).json({
             message: "Application submitted successfully",
@@ -141,6 +169,23 @@ export const updateApplicationStatus = async (req, res) => {
 
         application.status = status;
         await application.save();
+
+        // Notify the worker after the status has been saved.
+        if (application.worker?.email) {
+            if (status === "accepted") {
+                await sendApplicationAcceptedEmail({
+                    workerEmail: application.worker.email,
+                    workerName: application.worker.name,
+                    taskName: application.task.taskName,
+                });
+            } else {
+                await sendApplicationRejectedEmail({
+                    workerEmail: application.worker.email,
+                    workerName: application.worker.name,
+                    taskName: application.task.taskName,
+                });
+            }
+        }
 
         return res.status(200).json({
             message: `Application ${status}`,
