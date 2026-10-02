@@ -1,16 +1,28 @@
 import mongoose from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
-import Task from "../model/tasks.js";
+import Task, { TASK_CATEGORIES } from "../model/tasks.js";
 import { deleteFiles } from "../utils/fileUtils.js";
 
 export const createTask = async (req, res) => {
-  const { taskName, location, deadline, budget, tags, requirements, details } =
-    req.body;
+  const {
+    taskName,
+    category,
+    location,
+    deadline,
+    budget,
+    tags,
+    requirements,
+    details,
+  } = req.body;
 
-  if (!taskName || !location || !deadline || budget === undefined) {
-    return res
-      .status(400)
-      .json({ error: "Task name, location, deadline and budget are required" });
+  if (!taskName || !category || !location || !deadline || budget === undefined) {
+    return res.status(400).json({
+      error: "Task name, category, location, deadline and budget are required",
+    });
+  }
+
+  if (!TASK_CATEGORIES.includes(category)) {
+    return res.status(400).json({ error: "Invalid task category" });
   }
 
   try {
@@ -30,6 +42,7 @@ export const createTask = async (req, res) => {
     const newTask = new Task({
       postedBy: req.user.id,
       taskName,
+      category,
       location,
       deadline,
       budget,

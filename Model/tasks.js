@@ -8,6 +8,25 @@ const imageSchema = new Schema(
   { _id: false },
 );
 
+export const TASK_CATEGORIES = [
+  "Home Services",
+  "Electricians & Plumbers",
+  "Appliance & AC Repair",
+  "Carpentry & Painting",
+  "Drivers & Transport",
+  "Movers & Shifting",
+  "Delivery & Food Runs",
+  "Errands & Bill Payments",
+  "Tutors",
+  "Child Care",
+  "Elderly & Patient Care",
+  "Security Guards",
+  "Event Specialists",
+  "Tour Guides",
+  "Beauty & Grooming",
+  "Tech Support",
+];
+
 const taskSchema = new Schema(
   {
     taskImage: imageSchema,
@@ -23,6 +42,13 @@ const taskSchema = new Schema(
       type: Schema.Types.String,
       required: true,
       trim: true,
+    },
+
+    category: {
+      type: Schema.Types.String,
+      enum: TASK_CATEGORIES,
+      required: true,
+      index: true,
     },
 
     location: {
