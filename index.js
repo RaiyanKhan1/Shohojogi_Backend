@@ -9,6 +9,7 @@ import clientRoutes from "./routes/clientRoutes.js";
 import workerRoutes from "./routes/workerRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import publicRoutes from "./routes/publicRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 import fs from "fs";
 import { v2 as cloudinary } from "cloudinary";
 
@@ -61,6 +62,8 @@ app.use("/api/client", clientRoutes);
 app.use("/api/worker", workerRoutes);
 
 app.use("/api/admin", adminRoutes);
+
+app.use("/api/payment", paymentRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server listening on port: ${PORT}`);
