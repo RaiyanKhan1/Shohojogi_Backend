@@ -29,3 +29,17 @@ export const upload = multer({
   fileFilter,
   limits: { fileSize: 2 * 1024 * 1024, files: 1 },
 });
+
+export const VERIFICATION_DOCS = [
+  "nidFront",
+  "nidBack",
+  "cv",
+  "policeClearance",
+  "utilityBill",
+];
+
+export const uploadVerificationDocs = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 2 * 1024 * 1024, files: VERIFICATION_DOCS.length },
+}).fields(VERIFICATION_DOCS.map((name) => ({ name, maxCount: 1 })));
