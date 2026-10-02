@@ -1,22 +1,38 @@
 import express from "express";
-import { login, logout } from "../controller/authController.js";
+
+import {
+  login,
+  logout,
+} from "../controller/authController.js";
+
 import { getProfile } from "../controller/userController.js";
+
 import {
   getAllTasksForAdmin,
   getTaskById,
   setTaskApproval,
 } from "../controller/taskController.js";
+
 import checkToken from "../middlewares/checkToken.js";
 import checkRole from "../middlewares/checkRole.js";
 
 const router = express.Router();
 
+// Admin login is public because the user is not authenticated yet.
 router.post("/login", login("admin"));
 
-router.post("/logout", checkToken, logout);
+// Everything below this line requires:
+// 1. A valid JWT
+// 2. The user's role must be "admin"
+router.use(checkToken, checkRole("admin"));
 
-router.get("/profile", checkToken, checkRole("admin"), getProfile);
+// Logout
+router.post("/logout", logout);
 
+// Admin profile
+router.get("/profile", getProfile);
+
+// Admin task management
 router.get("/tasks", getAllTasksForAdmin);
 
 router.get("/tasks/:id", getTaskById);
