@@ -6,6 +6,11 @@ import {
   getTaskById,
   setTaskApproval,
 } from "../controller/taskController.js";
+import {
+  getAllVerifications,
+  getVerificationById,
+  reviewVerification,
+} from "../Controller/verificationController.js";
 import checkToken from "../middlewares/checkToken.js";
 import checkRole from "../middlewares/checkRole.js";
 
@@ -22,5 +27,12 @@ router.get("/tasks", getAllTasksForAdmin);
 router.get("/tasks/:id", getTaskById);
 
 router.patch("/tasks/:id/approval", setTaskApproval);
+
+// TODO: add checkToken + checkRole("admin") back once admin login exists.
+router.get("/verifications", getAllVerifications);
+
+router.get("/verifications/:id", getVerificationById);
+
+router.patch("/verifications/:id/review", reviewVerification);
 
 export default router;

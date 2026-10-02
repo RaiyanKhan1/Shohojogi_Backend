@@ -25,6 +25,10 @@ const userSchema = new Schema(
       required: true,
       enum: ROLES,
     },
+    isVerified: {
+      type: Schema.Types.Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );
