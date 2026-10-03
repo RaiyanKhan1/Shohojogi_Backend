@@ -22,6 +22,19 @@ const applicationSchema = new Schema(
             default: "pending",
             index: true,
         },
+
+        // Client's rating of the worker for this task (1-5).
+        rating: {
+            type: Number,
+            min: 1,
+            max: 5,
+            default: null,
+        },
+
+        ratedAt: {
+            type: Date,
+            default: null,
+        },
     },
     { timestamps: true },
 );

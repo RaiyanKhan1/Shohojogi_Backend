@@ -29,6 +29,18 @@ const userSchema = new Schema(
       type: Schema.Types.Boolean,
       default: false,
     },
+    // Average rating (1-5) given by clients; 0 means not rated yet.
+    rating: {
+      type: Schema.Types.Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    ratingCount: {
+      type: Schema.Types.Number,
+      default: 0,
+      min: 0,
+    },
   },
   { timestamps: true },
 );

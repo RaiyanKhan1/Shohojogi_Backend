@@ -14,6 +14,7 @@ import { multerErrorHandling } from "../middlewares/multerError.middleware.js";
 import {
   getClientApplications,
   updateApplicationStatus,
+  rateWorker,
 } from "../Controller/applicationController.js";
 
 const router = express.Router();
@@ -55,6 +56,14 @@ router.patch(
   checkToken,
   checkRole("client"),
   updateApplicationStatus,
+);
+
+// Client rates the worker of an accepted application.
+router.patch(
+  "/applications/:applicationId/rating",
+  checkToken,
+  checkRole("client"),
+  rateWorker,
 );
 
 export default router;

@@ -120,7 +120,7 @@ export const getClientApplications = async (req, res) => {
       task: { $in: taskIds },
     })
       .populate("task", "taskName location budget deadline status")
-      .populate("worker", "name email")
+      .populate("worker", "name email rating ratingCount")
       .sort({ createdAt: -1 });
 
     return res.status(200).json(applications);
@@ -197,6 +197,93 @@ export const updateApplicationStatus = async (req, res) => {
 
     return res.status(500).json({
       error: "Unable to update application",
+    });
+  }
+};
+
+// CLIENT: Rate the worker of an accepted application (1-5).
+export const rateWorker = async (req, res) => {
+  const { applicationId } = req.params;
+  const rating = Number(req.body?.rating);
+
+  if (!isValidId(applicationId)) {
+    return res.status(400).json({
+      error: "Invalid application ID",
+    });
+  }
+
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return res.status(400).json({
+      error: "Rating must be a whole number from 1 to 5",
+    });
+  }
+
+  try {
+    const application = await Application.findById(applicationId).populate(
+      "task",
+      "postedBy",
+    );
+
+    if (!application || !application.task) {
+      return res.status(404).json({
+        error: "Application not found",
+      });
+    }
+
+    // Verify that this client owns the task.
+    if (application.task.postedBy.toString() !== req.user.id) {
+      return res.status(403).json({
+        error: "You can only rate workers on your own tasks",
+      });
+    }
+
+    if (application.status !== "accepted") {
+      return res.status(409).json({
+        error: "You can only rate a worker you have accepted",
+      });
+    }
+
+    application.rating = rating;
+    application.ratedAt = new Date();
+    await application.save();
+
+    // Recalculate the worker's average from all their rated applications,
+    // so changing a rating never counts twice.
+    const [summary] = await Application.aggregate([
+      { $match: { worker: application.worker, rating: { $ne: null } } },
+      {
+        $group: {
+          _id: "$worker",
+          average: { $avg: "$rating" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const workerRating = {
+      rating: summary ? Math.round(summary.average * 10) / 10 : 0,
+      ratingCount: summary ? summary.count : 0,
+    };
+
+    await User.updateOne({ _id: application.worker }, workerRating);
+
+    return res.status(200).json({
+      message: "Rating saved",
+      application: {
+        _id: application._id,
+        rating: application.rating,
+        ratedAt: application.ratedAt,
+      },
+      worker: {
+        _id: application.worker,
+        ...workerRating,
+      },
+    });
+  } catch (err) {
+    console.error("Rate worker error:", err);
+
+    return res.status(500).json({
+      error: "Unable to save rating",
     });
   }
 };
