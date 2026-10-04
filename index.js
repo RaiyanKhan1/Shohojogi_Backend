@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import "dotenv/config";
 import log from "./middlewares/logger.js";
+import carbon from "./middlewares/carbon.js";
 import clientRoutes from "./routes/clientRoutes.js";
 import workerRoutes from "./routes/workerRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
@@ -52,6 +53,7 @@ app.use(
   }),
 );
 app.use(log);
+app.use(carbon);
 
 app.get("/api", (req, res) => res.json({ message: "API is working" }));
 
